@@ -1,51 +1,126 @@
-/// <reference path="../tsDefinitions/phaser.d.ts" />
+/// <reference path="../tsDefinitions/phaser.d.ts" /> 
+// não precisa necessariamente dessa referência acima pois tem no tsconfig.json isso
+// continuar http://phaser.io/tutorials/making-your-first-phaser-3-game/part9
 
-class SimpleGame
-{
-	game:Phaser.Game;
-	
-	constructor()
-	{
-		// create our phaser game
-		// 800 - width
-		// 600 - height
-		// Phaser.AUTO - determine the renderer automatically (canvas, webgl)
-		// 'content' - the name of the container to add our game to
-        // { preload:this.preload, create:this.create} - functions to call for our states
-        var gameConfig = {
-            width: 800,
-            height: 600,
-            type: Phaser.AUTO,
-            title: "Playground",
-            parent: 'content',
-            scene: { preload:this.preload, create:this.create}
-        };
-		this.game = new Phaser.Game(gameConfig);
+function SimpleGame() {
+	var config = {
+		type: Phaser.AUTO,
+		width: 800,
+		height: 600,
+		physics: {
+			default: 'arcade',
+			arcade: {
+				gravity: { y: 300 },
+				debug: false
+			}
+		},
+		scene: {
+			preload: preload,
+			create: create,
+			update: update
+		}
+	};
+
+	var game = new Phaser.Game(config);
+
+	var platforms;
+	var player;
+	var cursors;
+	var stars;
+
+	function preload() {
+		this.load.image('sky', 'assets/sky.png');
+		this.load.image('ground', 'assets/platform.png')
+		this.load.image('star', 'assets/star.png');
+		this.load.image('bomb', 'assets/bomb.png');
+		this.load.spritesheet('dude',
+			'assets/dude.png',
+			{ frameWidth: 32, frameHeight: 48 }
+		);
 	}
-	
-	preload()
-	{
-		// add our logo image to the assets class under the
-		// key 'logo'. We're also setting the background colour
-		// so it's the same as the background colour in the image
-        
-        //this.game.load.image( 'logo', "assets/ds_logo.png" );
-		//this.game.stage.backgroundColor = 0xB20059;
+
+	function create() {
+		// sky, platform and player
+		this.add.image(400, 300, 'sky');
+		
+		platforms = this.physics.add.staticGroup();
+
+		platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+		platforms.create(600, 400, 'ground');
+		platforms.create(50, 250, 'ground');
+		platforms.create(750, 220, 'ground');
+
+		player = this.physics.add.sprite(100, 450, 'dude');
+		
+		player.setBounce(0.2);
+		player.setCollideWorldBounds(true);
+		
+		// animations
+		this.anims.create({
+			key: 'left',
+			frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+			frameRate: 10,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'turn',
+			frames: [{ key: 'dude', frame: 4 }],
+			frameRate: 20
+		});
+
+		this.anims.create({
+			key: 'right',
+			frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+			frameRate: 10,
+			repeat: -1
+		});
+
+		this.physics.add.collider(player, platforms);
+
+		cursors = this.input.keyboard.createCursorKeys();
+
+		// stars
+		stars = this.physics.add.group({
+			key: 'star',
+			repeat: 11,
+			setXY: { x: 12, y: 0, stepX: 70 }
+		});
+		
+		stars.children.iterate(function (child) {
+			child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+		});
+
+		this.physics.add.collider(stars, platforms);
+		this.physics.add.overlap(player, stars, collectStar, null, this);
 	}
-	
-	create()
+
+	function update() {
+		if (cursors.left.isDown) {
+			player.setVelocityX(-160);
+			player.anims.play('left', true);
+		}
+		else if (cursors.right.isDown) {
+			player.setVelocityX(160);
+			player.anims.play('right', true);
+		}
+		else {
+			player.setVelocityX(0);
+			player.anims.play('turn');
+		}
+
+		if (cursors.up.isDown && player.body.touching.down) {
+			player.setVelocityY(-330);
+		}
+	}
+
+	function collectStar (player, star)
 	{
-		// add the 'logo' sprite to the game, position it in the
-		// center of the screen, and set the anchor to the center of
-		// the image so it's centered properly. There's a lot of
-		// centering in that last sentence
-        
-        //var logo = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY, 'logo' );
-		//logo.anchor.setTo( 0.5, 0.5 );
+		star.disableBody(true, true);
 	}
 }
 
 // when the page has finished loading, create our game
-window.onload = () => {
+window.onload = () => {	
 	var game = new SimpleGame();
 }
