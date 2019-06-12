@@ -1,6 +1,5 @@
 /// <reference path="../tsDefinitions/phaser.d.ts" /> 
 // não precisa necessariamente dessa referência acima pois tem no tsconfig.json isso
-// continuar http://phaser.io/tutorials/making-your-first-phaser-3-game/part9
 
 function SimpleGame() {
 	var config = {
@@ -21,7 +20,7 @@ function SimpleGame() {
 		}
 	};
 
-	var game = new Phaser.Game(config);
+	var game = new Phaser.Game(config);	
 
 	// elements
 	var platforms;
